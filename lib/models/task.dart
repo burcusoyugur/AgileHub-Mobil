@@ -16,14 +16,27 @@ extension TaskStatusExtension on TaskStatus {
     }
   }
 
+  /// API'deki GorevDurumu enum değeri.
+  String get apiValue {
+    switch (this) {
+      case TaskStatus.todo:
+        return 'Yapilacak';
+      case TaskStatus.inProgress:
+        return 'Yapiliyor';
+      case TaskStatus.testing:
+        return 'Test';
+      case TaskStatus.done:
+        return 'Bitti';
+    }
+  }
+
   static TaskStatus fromString(String value) {
-    switch (value.toLowerCase()) {
-      case 'inprogress':
-      case 'in_progress':
+    switch (value) {
+      case 'Yapiliyor':
         return TaskStatus.inProgress;
-      case 'testing':
+      case 'Test':
         return TaskStatus.testing;
-      case 'done':
+      case 'Bitti':
         return TaskStatus.done;
       default:
         return TaskStatus.todo;
@@ -45,40 +58,56 @@ extension TaskPriorityExtension on TaskPriority {
     }
   }
 
+  /// API'deki GorevOnceligi enum değeri.
+  String get apiValue {
+    switch (this) {
+      case TaskPriority.low:
+        return 'Dusuk';
+      case TaskPriority.medium:
+        return 'Orta';
+      case TaskPriority.high:
+        return 'Yuksek';
+      case TaskPriority.critical:
+        return 'Kritik';
+    }
+  }
+
   static TaskPriority fromString(String value) {
-    switch (value.toLowerCase()) {
-      case 'medium':
-        return TaskPriority.medium;
-      case 'high':
+    switch (value) {
+      case 'Dusuk':
+        return TaskPriority.low;
+      case 'Yuksek':
         return TaskPriority.high;
-      case 'critical':
+      case 'Kritik':
         return TaskPriority.critical;
       default:
-        return TaskPriority.low;
+        return TaskPriority.medium;
     }
   }
 }
 
 class Task {
   final int id;
-  final int sprintId;
+  final int projectId;
+  final int? sprintId;
   final String title;
   final String? description;
   final TaskStatus status;
   final TaskPriority priority;
-  final int storyPoints;
-  final int? assignedUserId;
+  final int? storyPoints;
+  final String? assignedUserId;
   final String? assignedUserName;
   final DateTime createdAt;
 
   const Task({
     required this.id,
-    required this.sprintId,
+    required this.projectId,
+    this.sprintId,
     required this.title,
     this.description,
     required this.status,
     required this.priority,
-    required this.storyPoints,
+    this.storyPoints,
     this.assignedUserId,
     this.assignedUserName,
     required this.createdAt,
@@ -90,11 +119,12 @@ class Task {
     String? description,
     TaskPriority? priority,
     int? storyPoints,
-    int? assignedUserId,
+    String? assignedUserId,
     String? assignedUserName,
   }) {
     return Task(
       id: id,
+      projectId: projectId,
       sprintId: sprintId,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -110,28 +140,30 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       id: json['id'] as int,
-      sprintId: json['sprintId'] as int,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      status: TaskStatusExtension.fromString(json['status'] as String),
-      priority: TaskPriorityExtension.fromString(json['priority'] as String),
-      storyPoints: json['storyPoints'] as int? ?? 1,
-      assignedUserId: json['assignedUserId'] as int?,
-      assignedUserName: json['assignedUserName'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      projectId: json['projeId'] as int,
+      sprintId: json['sprintId'] as int?,
+      title: json['baslik'] as String,
+      description: json['aciklama'] as String?,
+      status: TaskStatusExtension.fromString(json['durum'] as String),
+      priority: TaskPriorityExtension.fromString(json['oncelik'] as String),
+      storyPoints: json['storyPoint'] as int?,
+      assignedUserId: json['atananKullaniciId'] as String?,
+      assignedUserName: json['atananKullaniciAdi'] as String?,
+      createdAt: DateTime.parse(json['olusturmaTarihi'] as String),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'projeId': projectId,
         'sprintId': sprintId,
-        'title': title,
-        'description': description,
-        'status': status.name,
-        'priority': priority.name,
-        'storyPoints': storyPoints,
-        'assignedUserId': assignedUserId,
-        'assignedUserName': assignedUserName,
-        'createdAt': createdAt.toIso8601String(),
+        'baslik': title,
+        'aciklama': description,
+        'durum': status.apiValue,
+        'oncelik': priority.apiValue,
+        'storyPoint': storyPoints,
+        'atananKullaniciId': assignedUserId,
+        'atananKullaniciAdi': assignedUserName,
+        'olusturmaTarihi': createdAt.toIso8601String(),
       };
 }

@@ -10,8 +10,8 @@ class ProjectsScreen extends StatelessWidget {
       id: 1,
       name: 'AgileHub Mobil',
       description: 'Çevik proje takip mobil uygulaması',
-      status: 'active',
       createdAt: DateTime(2026, 10, 1),
+      createdByUserId: 'demo-kullanici',
     ),
   ];
 

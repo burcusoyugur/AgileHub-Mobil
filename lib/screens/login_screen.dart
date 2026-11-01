@@ -31,18 +31,19 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
-    final success = await _authService.login(
-      _emailController.text,
-      _passwordController.text,
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-
-    if (success) {
+    try {
+      await _authService.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (!mounted) return;
+      setState(() => _loading = false);
       context.go('/projects');
-    } else {
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('E-posta veya şifre hatalı')),
+        SnackBar(content: Text(e.message)),
       );
     }
   }
