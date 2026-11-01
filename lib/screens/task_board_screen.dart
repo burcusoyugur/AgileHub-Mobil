@@ -11,6 +11,7 @@ class TaskBoardScreen extends StatelessWidget {
   static final List<Task> _sampleTasks = [
     Task(
       id: 1,
+      projectId: 1,
       sprintId: 1,
       title: 'Flutter proje iskeleti oluştur',
       status: TaskStatus.done,
@@ -21,6 +22,7 @@ class TaskBoardScreen extends StatelessWidget {
     ),
     Task(
       id: 2,
+      projectId: 1,
       sprintId: 1,
       title: 'Tema ve renk sistemi',
       status: TaskStatus.inProgress,
@@ -31,6 +33,7 @@ class TaskBoardScreen extends StatelessWidget {
     ),
     Task(
       id: 3,
+      projectId: 1,
       sprintId: 1,
       title: 'Model sınıfları',
       status: TaskStatus.inProgress,
@@ -41,6 +44,7 @@ class TaskBoardScreen extends StatelessWidget {
     ),
     Task(
       id: 4,
+      projectId: 1,
       sprintId: 1,
       title: 'Sayfa yönlendirmesi (Router)',
       status: TaskStatus.todo,
@@ -51,6 +55,7 @@ class TaskBoardScreen extends StatelessWidget {
     ),
     Task(
       id: 5,
+      projectId: 1,
       sprintId: 1,
       title: 'Giriş ekranı UI',
       status: TaskStatus.todo,
@@ -167,12 +172,13 @@ class _TaskList extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(width: 8),
                 ],
-                Chip(
-                  label: Text('${task.storyPoints} SP'),
-                  padding: EdgeInsets.zero,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                  visualDensity: VisualDensity.compact,
-                ),
+                if (task.storyPoints != null)
+                  Chip(
+                    label: Text('${task.storyPoints} SP'),
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
             onTap: () =>
