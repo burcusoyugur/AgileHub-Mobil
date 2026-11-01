@@ -36,23 +36,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
-    final success = await _authService.register(
-      _fullNameController.text.trim(),
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-
-    final messenger = ScaffoldMessenger.of(context);
-    if (success) {
-      messenger.showSnackBar(
+    try {
+      await _authService.register(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Hesabınız oluşturuldu')),
       );
       context.go('/projects');
-    } else {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Bu e-posta adresi zaten kayıtlı')),
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
       );
     }
   }
