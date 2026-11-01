@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/validators.dart';
 
@@ -17,7 +19,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _authService = AuthService();
 
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
@@ -35,25 +36,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final auth = context.read<AuthProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
     setState(() => _loading = true);
     try {
-      await _authService.register(
+      await auth.register(
         _fullNameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Başarılı kayıtta yönlendirmeyi router'daki redirect yapar.
+      messenger.showSnackBar(
         const SnackBar(content: Text('Hesabınız oluşturuldu')),
       );
-      context.go('/projects');
+      if (!mounted) return;
+      setState(() => _loading = false);
     } on AuthException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -101,11 +104,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'Şifre',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
-                      icon: Icon(_hidePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
-                      tooltip:
-                          _hidePassword ? 'Şifreyi göster' : 'Şifreyi gizle',
+                      icon: Icon(
+                        _hidePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      tooltip: _hidePassword
+                          ? 'Şifreyi göster'
+                          : 'Şifreyi gizle',
                       onPressed: () =>
                           setState(() => _hidePassword = !_hidePassword),
                     ),
@@ -121,21 +127,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'Şifre Tekrar',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
-                      icon: Icon(_hideConfirmPassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
+                      icon: Icon(
+                        _hideConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
                       tooltip: _hideConfirmPassword
                           ? 'Şifreyi göster'
                           : 'Şifreyi gizle',
                       onPressed: () => setState(
-                          () => _hideConfirmPassword = !_hideConfirmPassword),
+                        () => _hideConfirmPassword = !_hideConfirmPassword,
+                      ),
                     ),
                   ),
                   obscureText: _hideConfirmPassword,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _register(),
                   validator: (value) => Validators.confirmPassword(
-                      value, _passwordController.text),
+                    value,
+                    _passwordController.text,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

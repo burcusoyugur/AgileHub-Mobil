@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
 import '../models/project.dart';
+import '../providers/auth_provider.dart';
 
 class ProjectsScreen extends StatelessWidget {
   const ProjectsScreen({super.key});
@@ -22,8 +25,10 @@ class ProjectsScreen extends StatelessWidget {
         title: const Text('Projelerim'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {},
+            icon: const Icon(Icons.logout),
+            tooltip: 'Çıkış Yap',
+            // Çıkıştan sonra router'daki redirect /login'e yönlendirir.
+            onPressed: () => context.read<AuthProvider>().logout(),
           ),
         ],
       ),
