@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/validators.dart';
 
@@ -15,7 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
 
   bool _hidePassword = true;
   bool _loading = false;
@@ -32,19 +33,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await _authService.login(
+      // Başarılı girişte yönlendirmeyi router'daki redirect yapar.
+      await context.read<AuthProvider>().login(
         _emailController.text,
         _passwordController.text,
       );
       if (!mounted) return;
       setState(() => _loading = false);
-      context.go('/projects');
     } on AuthException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -68,16 +68,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     'AgileHub',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.primary,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: colors.primary,
+                    ),
                   ),
                   Text(
                     'Çevik Proje Takip',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodyLarge
+                        ?.copyWith(color: colors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 48),
                   TextFormField(
@@ -97,10 +96,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Şifre',
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
-                        icon: Icon(_hidePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        tooltip: _hidePassword ? 'Şifreyi göster' : 'Şifreyi gizle',
+                        icon: Icon(
+                          _hidePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        tooltip: _hidePassword
+                            ? 'Şifreyi göster'
+                            : 'Şifreyi gizle',
                         onPressed: () =>
                             setState(() => _hidePassword = !_hidePassword),
                       ),
@@ -130,9 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Demo: ${AuthService.demoEmail} ile giriş yapılabilir',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: colors.onSurfaceVariant),
                   ),
                 ],
               ),
