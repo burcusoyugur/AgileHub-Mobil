@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/auth_service.dart';
+import '../utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,24 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'E-posta boş olamaz';
-    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailPattern.hasMatch(email)) return 'Geçerli bir e-posta girin';
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    final password = value ?? '';
-    if (password.isEmpty) return 'Şifre boş olamaz';
-    if (password.length < 6) return 'Şifre en az 6 karakter olmalı';
-    if (!RegExp(r'\d').hasMatch(password)) {
-      return 'Şifre en az bir rakam içermeli';
-    }
-    return null;
   }
 
   Future<void> _login() async {
@@ -104,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    validator: _validateEmail,
+                    validator: Validators.email,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -124,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _hidePassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _login(),
-                    validator: _validatePassword,
+                    validator: Validators.password,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
