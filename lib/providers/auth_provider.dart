@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/user.dart';
@@ -12,13 +14,14 @@ class AuthProvider extends ChangeNotifier {
   final TokenStorage _tokenStorage;
 
   AuthProvider({AuthService? authService, TokenStorage? tokenStorage})
-      : _authService = authService ?? AuthService(),
-        _tokenStorage = tokenStorage ?? TokenStorage();
+    : _authService = authService ?? AuthService(),
+      _tokenStorage = tokenStorage ?? TokenStorage();
 
   User? _currentUser;
   String? _token;
   DateTime? _expiresAt;
   bool _isInitializing = true;
+  Timer? _expiryTimer;
 
   User? get currentUser => _currentUser;
   String? get token => _token;
@@ -76,11 +79,30 @@ class AuthProvider extends ChangeNotifier {
     _token = result.token;
     _expiresAt = result.expiresAt;
     _currentUser = result.user;
+    _scheduleExpiry(result.expiresAt);
+  }
+
+  /// Uygulama açıkken token süresi dolarsa otomatik çıkış yapar.
+  void _scheduleExpiry(DateTime expiresAt) {
+    _expiryTimer?.cancel();
+    final remaining = expiresAt.difference(DateTime.now());
+    _expiryTimer = Timer(
+      remaining.isNegative ? Duration.zero : remaining,
+      logout,
+    );
   }
 
   void _clearSession() {
+    _expiryTimer?.cancel();
+    _expiryTimer = null;
     _token = null;
     _expiresAt = null;
     _currentUser = null;
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
   }
 }
