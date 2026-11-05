@@ -5,6 +5,7 @@ import '../screens/login_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/projects_screen.dart';
 import '../screens/project_detail_screen.dart';
+import '../screens/sprint_list_screen.dart';
 import '../screens/task_board_screen.dart';
 import '../screens/task_detail_screen.dart';
 import '../screens/task_form_screen.dart';
@@ -45,6 +46,11 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
       path: '/projects/:projectId',
       builder: (context, state) =>
           ProjectDetailScreen(projectId: state.pathParameters['projectId']!),
+    ),
+    GoRoute(
+      path: '/projects/:projectId/sprints',
+      builder: (context, state) =>
+          SprintListScreen(projectId: state.pathParameters['projectId']!),
     ),
     GoRoute(
       path: '/projects/:projectId/board',
