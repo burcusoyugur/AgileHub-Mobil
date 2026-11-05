@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'routes/app_router.dart';
+import 'services/mock_project_service.dart';
+import 'services/mock_sprint_service.dart';
+import 'services/project_service.dart';
+import 'services/sprint_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -38,8 +42,13 @@ class _AgileHubAppState extends State<AgileHubApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _auth,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _auth),
+        // API 4. haftada hazır olana kadar ekranlar örnek veriyle çalışır.
+        Provider<ProjectService>(create: (_) => const MockProjectService()),
+        Provider<SprintService>(create: (_) => const MockSprintService()),
+      ],
       child: MaterialApp.router(
         title: 'AgileHub Mobil',
         theme: AppTheme.light,
