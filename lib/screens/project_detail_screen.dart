@@ -101,6 +101,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         _ProjectHeader(project: data.project),
+        const SizedBox(height: 12),
+        _SprintStats(sprints: data.sprints),
         const SizedBox(height: 24),
         Text(
           'Sprintler',
@@ -211,6 +213,76 @@ class _InfoItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sprint sayısı, tamamlanan sprintler ve bitirilen story point toplamı.
+class _SprintStats extends StatelessWidget {
+  final List<Sprint> sprints;
+
+  const _SprintStats({required this.sprints});
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = sprints
+        .where((s) => s.status == SprintStatus.completed)
+        .length;
+    final doneStoryPoints = sprints
+        .where((s) => s.status != SprintStatus.cancelled)
+        .fold<int>(0, (sum, s) => sum + s.completedStoryPoints);
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatTile(value: '${sprints.length}', label: 'Sprint'),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(value: '$completed', label: 'Tamamlanan'),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(value: '$doneStoryPoints', label: 'Biten SP'),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _StatTile({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
