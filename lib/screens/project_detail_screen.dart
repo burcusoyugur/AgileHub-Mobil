@@ -7,6 +7,7 @@ import '../models/sprint.dart';
 import '../services/api_exception.dart';
 import '../services/project_service.dart';
 import '../services/sprint_service.dart';
+import '../utils/formatters.dart';
 import '../widgets/state_views.dart';
 
 /// Proje detay ekranında birlikte yüklenen veriler.
@@ -99,6 +100,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _ProjectHeader(project: data.project),
+        const SizedBox(height: 24),
         Text(
           'Sprintler',
           style: Theme.of(context).textTheme.titleMedium
@@ -112,6 +115,99 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               '/projects/${widget.projectId}/board',
               extra: sprint.id,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProjectHeader extends StatelessWidget {
+  final Project project;
+
+  const _ProjectHeader({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: colors.primaryContainer,
+                  child: Text(
+                    project.name[0],
+                    style: TextStyle(
+                      color: colors.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    project.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (project.description != null) ...[
+              const SizedBox(height: 12),
+              Text(project.description!, style: theme.textTheme.bodyMedium),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _InfoItem(
+                  icon: Icons.person_outline,
+                  text: project.createdByUserName ?? 'Bilinmiyor',
+                ),
+                _InfoItem(
+                  icon: Icons.calendar_today_outlined,
+                  text: formatDate(project.createdAt),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoItem({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: color),
           ),
         ),
       ],
