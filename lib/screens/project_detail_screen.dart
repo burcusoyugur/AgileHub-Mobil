@@ -120,17 +120,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         else
           const _NoActiveSprintCard(),
         const SizedBox(height: 24),
-        const _SectionTitle('Sprintler'),
-        const SizedBox(height: 12),
-        ...data.sprints.map(
-          (sprint) => _SprintCard(
-            sprint: sprint,
-            onTap: () => context.go(
-              '/projects/${widget.projectId}/board',
-              extra: sprint.id,
-            ),
-          ),
-        ),
+        _RecentSprints(sprints: data.sprints, projectId: widget.projectId),
       ],
     );
   }
@@ -468,74 +458,70 @@ class _NoActiveSprintCard extends StatelessWidget {
   }
 }
 
-class _SprintCard extends StatelessWidget {
-  final Sprint sprint;
-  final VoidCallback onTap;
+/// Aktif sprint dışındaki en yeni sprintler; tamamı Sprintler ekranında.
+class _RecentSprints extends StatelessWidget {
+  static const int _previewCount = 3;
 
-  const _SprintCard({required this.sprint, required this.onTap});
+  final List<Sprint> sprints;
+  final String projectId;
+
+  const _RecentSprints({required this.sprints, required this.projectId});
 
   @override
   Widget build(BuildContext context) {
-    final progress = sprint.totalStoryPoints > 0
-        ? sprint.completedStoryPoints / sprint.totalStoryPoints
-        : 0.0;
+    // Servis sprintleri yeniden eskiye sıralı döndürüyor.
+    final preview = sprints
+        .where((s) => !s.isActive)
+        .take(_previewCount)
+        .toList();
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      sprint.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  if (sprint.isActive)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Aktif',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: _SectionTitle('Sprintler')),
+            if (sprints.isNotEmpty)
+              TextButton(
+                onPressed: () => context.go('/projects/$projectId/sprints'),
+                child: Text('Tümünü gör (${sprints.length})'),
               ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: progress,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${sprint.completedStoryPoints} / ${sprint.totalStoryPoints} SP',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
-      ),
+        const SizedBox(height: 4),
+        if (sprints.isEmpty)
+          const EmptyView(
+            icon: Icons.event_note_outlined,
+            message: 'Bu projede henüz sprint yok',
+          )
+        else if (preview.isEmpty)
+          Text(
+            'Aktif sprint dışında sprint yok',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          ...preview.map(
+            (sprint) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                title: Text(
+                  sprint.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${formatDateRange(sprint.startDate, sprint.endDate)}\n'
+                  '${formatStoryPoints(sprint.completedStoryPoints, sprint.totalStoryPoints)}',
+                ),
+                isThreeLine: true,
+                trailing: SprintStatusChip(status: sprint.status),
+                onTap: () =>
+                    context.go('/projects/$projectId/board', extra: sprint.id),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
