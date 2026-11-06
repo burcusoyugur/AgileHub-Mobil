@@ -116,7 +116,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         const _SectionTitle('Aktif Sprint'),
         const SizedBox(height: 12),
         if (data.activeSprint case final sprint?)
-          _ActiveSprintCard(sprint: sprint)
+          _ActiveSprintCard(sprint: sprint, projectId: widget.projectId)
         else
           const _NoActiveSprintCard(),
         const SizedBox(height: 24),
@@ -316,8 +316,9 @@ class _SectionTitle extends StatelessWidget {
 
 class _ActiveSprintCard extends StatelessWidget {
   final Sprint sprint;
+  final String projectId;
 
-  const _ActiveSprintCard({required this.sprint});
+  const _ActiveSprintCard({required this.sprint, required this.projectId});
 
   /// Bitiş tarihine kalan gün; geçmişse negatif.
   int get _remainingDays {
@@ -411,6 +412,33 @@ class _ActiveSprintCard extends StatelessWidget {
                   '%${(progress * 100).round()}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: () => context.go(
+                      '/projects/$projectId/board',
+                      extra: sprint.id,
+                    ),
+                    icon: const Icon(Icons.view_kanban_outlined),
+                    label: const Text('Görev Panosu'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        context.go('/projects/$projectId/sprint-summary'),
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('Sprint Özeti'),
                   ),
                 ),
               ],
