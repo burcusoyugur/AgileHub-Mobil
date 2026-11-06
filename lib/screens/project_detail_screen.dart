@@ -8,6 +8,7 @@ import '../services/api_exception.dart';
 import '../services/project_service.dart';
 import '../services/sprint_service.dart';
 import '../utils/formatters.dart';
+import '../widgets/sprint_status_chip.dart';
 import '../widgets/state_views.dart';
 
 /// Proje detay ekranında birlikte yüklenen veriler.
@@ -16,6 +17,14 @@ class _ProjectDetailData {
   final List<Sprint> sprints;
 
   const _ProjectDetailData(this.project, this.sprints);
+
+  /// Bir projede aynı anda en fazla bir aktif sprint olur.
+  Sprint? get activeSprint {
+    for (final sprint in sprints) {
+      if (sprint.isActive) return sprint;
+    }
+    return null;
+  }
 }
 
 class ProjectDetailScreen extends StatefulWidget {
@@ -104,11 +113,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         const SizedBox(height: 12),
         _SprintStats(sprints: data.sprints),
         const SizedBox(height: 24),
-        Text(
-          'Sprintler',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
+        const _SectionTitle('Aktif Sprint'),
+        const SizedBox(height: 12),
+        if (data.activeSprint case final sprint?)
+          _ActiveSprintCard(sprint: sprint)
+        else
+          const _NoActiveSprintCard(),
+        const SizedBox(height: 24),
+        const _SectionTitle('Sprintler'),
         const SizedBox(height: 12),
         ...data.sprints.map(
           (sprint) => _SprintCard(
@@ -281,6 +293,147 @@ class _StatTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium
+          ?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+}
+
+class _ActiveSprintCard extends StatelessWidget {
+  final Sprint sprint;
+
+  const _ActiveSprintCard({required this.sprint});
+
+  /// Bitiş tarihine kalan gün; geçmişse negatif.
+  int get _remainingDays {
+    final today = DateUtils.dateOnly(DateTime.now());
+    return DateUtils.dateOnly(sprint.endDate).difference(today).inDays;
+  }
+
+  String get _remainingLabel {
+    final days = _remainingDays;
+    if (days > 0) return '$days gün kaldı';
+    if (days == 0) return 'Bugün bitiyor';
+    return 'Süresi doldu';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final total = sprint.totalStoryPoints;
+    final completed = sprint.completedStoryPoints;
+    final progress = total > 0 ? completed / total : 0.0;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    sprint.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SprintStatusChip(status: sprint.status),
+              ],
+            ),
+            if (sprint.goal != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                sprint.goal!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.date_range,
+                  size: 16,
+                  color: colors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    formatDateRange(sprint.startDate, sprint.endDate),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                Text(
+                  _remainingLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: _remainingDays < 0 ? colors.error : colors.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  formatStoryPoints(completed, total),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const Spacer(),
+                Text(
+                  '%${(progress * 100).round()}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoActiveSprintCard extends StatelessWidget {
+  const _NoActiveSprintCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        leading: Icon(Icons.info_outline),
+        title: Text('Aktif sprint yok'),
+        subtitle: Text(
+          'Planlanan bir sprint web portalından başlatıldığında burada görünür.',
         ),
       ),
     );
