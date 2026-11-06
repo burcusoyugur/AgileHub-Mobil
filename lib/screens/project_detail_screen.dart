@@ -75,6 +75,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     setState(() => _future = _load());
   }
 
+  Future<void> _refresh() async {
+    final future = _load();
+    setState(() => _future = future);
+    try {
+      await future;
+    } catch (_) {
+      // Hata FutureBuilder üzerinden ekranda gösteriliyor.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_ProjectDetailData>(
@@ -106,22 +116,27 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
 
     final data = snapshot.data!;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _ProjectHeader(project: data.project),
-        const SizedBox(height: 12),
-        _SprintStats(sprints: data.sprints),
-        const SizedBox(height: 24),
-        const _SectionTitle('Aktif Sprint'),
-        const SizedBox(height: 12),
-        if (data.activeSprint case final sprint?)
-          _ActiveSprintCard(sprint: sprint, projectId: widget.projectId)
-        else
-          const _NoActiveSprintCard(),
-        const SizedBox(height: 24),
-        _RecentSprints(sprints: data.sprints, projectId: widget.projectId),
-      ],
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        // Ekran dolmasa da aşağı çekerek yenilenebilsin.
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          _ProjectHeader(project: data.project),
+          const SizedBox(height: 12),
+          _SprintStats(sprints: data.sprints),
+          const SizedBox(height: 24),
+          const _SectionTitle('Aktif Sprint'),
+          const SizedBox(height: 12),
+          if (data.activeSprint case final sprint?)
+            _ActiveSprintCard(sprint: sprint, projectId: widget.projectId)
+          else
+            const _NoActiveSprintCard(),
+          const SizedBox(height: 24),
+          _RecentSprints(sprints: data.sprints, projectId: widget.projectId),
+        ],
+      ),
     );
   }
 }
