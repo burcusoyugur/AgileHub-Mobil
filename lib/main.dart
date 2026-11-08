@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'routes/app_router.dart';
+import 'services/api_client.dart';
+import 'services/api_config.dart';
+import 'services/api_project_service.dart';
+import 'services/api_sprint_service.dart';
 import 'services/mock_project_service.dart';
 import 'services/mock_sprint_service.dart';
 import 'services/project_service.dart';
@@ -25,17 +29,23 @@ class _AgileHubAppState extends State<AgileHubApp> {
   // Router her build'de yeniden oluşmasın diye state içinde tutulur.
   late final AuthProvider _auth;
   late final GoRouter _router;
+  late final ApiClient _apiClient;
 
   @override
   void initState() {
     super.initState();
     _auth = AuthProvider()..tryAutoLogin();
     _router = createRouter(_auth);
+    _apiClient = ApiClient(
+      tokenProvider: () => _auth.token,
+      onUnauthorized: _auth.logout,
+    );
   }
 
   @override
   void dispose() {
     _router.dispose();
+    _apiClient.close();
     _auth.dispose();
     super.dispose();
   }
@@ -45,9 +55,18 @@ class _AgileHubAppState extends State<AgileHubApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _auth),
-        // API 4. haftada hazır olana kadar ekranlar örnek veriyle çalışır.
-        Provider<ProjectService>(create: (_) => const MockProjectService()),
-        Provider<SprintService>(create: (_) => const MockSprintService()),
+        // USE_MOCK_DATA açıkken (varsayılan) ekranlar örnek veriyle,
+        // kapalıyken ortak API ile çalışır. Ekranlarda hiçbir şey değişmez.
+        Provider<ProjectService>(
+          create: (_) => ApiConfig.useMockData
+              ? const MockProjectService()
+              : ApiProjectService(_apiClient),
+        ),
+        Provider<SprintService>(
+          create: (_) => ApiConfig.useMockData
+              ? const MockSprintService()
+              : ApiSprintService(_apiClient),
+        ),
       ],
       child: MaterialApp.router(
         title: 'AgileHub Mobil',

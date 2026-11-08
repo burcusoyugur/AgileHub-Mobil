@@ -11,6 +11,11 @@ class ApiConfig {
   static const bool useMockAuth =
       bool.fromEnvironment('USE_MOCK_AUTH', defaultValue: true);
 
+  /// Proje ve sprint verileri için de 4. haftaya kadar sahte servis
+  /// kullanılır. Gerçek API için: flutter run --dart-define=USE_MOCK_DATA=false
+  static const bool useMockData =
+      bool.fromEnvironment('USE_MOCK_DATA', defaultValue: true);
+
   /// Android emülatöründe bilgisayarın localhost adresi 10.0.2.2'dir.
   static String get baseUrl =>
       Platform.isAndroid ? 'http://10.0.2.2:$port' : 'http://localhost:$port';
