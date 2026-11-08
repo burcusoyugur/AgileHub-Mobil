@@ -6,6 +6,7 @@ import '../models/project.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_exception.dart';
 import '../services/project_service.dart';
+import '../utils/formatters.dart';
 import '../widgets/state_views.dart';
 
 /// Kullanıcının üyesi olduğu projeler. Veri [ProjectService] üzerinden gelir;
@@ -134,12 +135,54 @@ class _ProjectCard extends StatelessWidget {
           project.name,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: project.description != null
-            ? Text(project.description!)
-            : null,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (project.description case final description?
+                when description.trim().isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+            const SizedBox(height: 8),
+            _ProjectMeta(project: project),
+          ],
+        ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.go('/projects/${project.id}'),
       ),
+    );
+  }
+}
+
+/// Kartın alt satırı: oluşturan kişi ve oluşturma tarihi.
+class _ProjectMeta extends StatelessWidget {
+  final Project project;
+
+  const _ProjectMeta({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
+
+    return Row(
+      children: [
+        Icon(Icons.person_outline, size: 14, color: color),
+        const SizedBox(width: 4),
+        // Uzun adlar dar ekranda taşmasın, tarih her zaman görünsün.
+        Flexible(
+          child: Text(
+            project.createdByUserName ?? 'Bilinmiyor',
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Icon(Icons.calendar_today_outlined, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(formatDate(project.createdAt), style: style),
+      ],
     );
   }
 }
