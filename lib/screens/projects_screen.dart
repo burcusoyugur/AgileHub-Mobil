@@ -20,11 +20,33 @@ class ProjectsScreen extends StatefulWidget {
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
   late Future<List<Project>> _future;
+  final _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Aramada büyük/küçük harf farkını kaldırır. Dart'ın `toLowerCase`'i
+  /// Türkçe İ/I harflerini doğru çevirmediği için i, ı, İ ve I aynı sayılır.
+  static String _normalize(String text) => text
+      .replaceAll('İ', 'i')
+      .replaceAll('I', 'i')
+      .toLowerCase()
+      .replaceAll('ı', 'i')
+      .trim();
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() => _query = '');
   }
 
   Future<List<Project>> _load() => context.read<ProjectService>().getProjects();
@@ -85,6 +107,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
 
     final projects = snapshot.data!;
+    final query = _normalize(_query);
+    final filtered = query.isEmpty
+        ? projects
+        : projects.where((p) => _normalize(p.name).contains(query)).toList();
+
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(
@@ -92,17 +119,66 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         // Liste kısa ya da boş olsa da aşağı çekerek yenilenebilsin.
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          const _Greeting(),
           if (projects.isEmpty)
             const EmptyView(
               icon: Icons.folder_off_outlined,
               message: 'Henüz üyesi olduğun bir proje yok',
             )
-          else
-            for (final project in projects) ...[
-              _ProjectCard(project: project),
-              const SizedBox(height: 12),
-            ],
+          else ...[
+            TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _query = value),
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Proje ara',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        tooltip: 'Aramayı temizle',
+                        onPressed: _clearSearch,
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (filtered.isEmpty)
+              const EmptyView(
+                icon: Icons.search_off,
+                message: 'Aramanla eşleşen proje yok',
+              )
+            else
+              for (final project in filtered) ...[
+                _ProjectCard(project: project),
+                const SizedBox(height: 12),
+              ],
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Giriş yapan kullanıcının adıyla karşılama; ad bilinmiyorsa hiç görünmez.
+class _Greeting extends StatelessWidget {
+  const _Greeting();
+
+  @override
+  Widget build(BuildContext context) {
+    final firstName = context.select<AuthProvider, String?>(
+      (auth) => auth.currentUser?.firstName,
+    );
+    if (firstName == null || firstName.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        'Merhaba, $firstName',
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
