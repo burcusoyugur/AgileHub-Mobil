@@ -47,20 +47,21 @@ Mod, `--dart-define` ile seçilir. Ekranlar veriyi her zaman servis arayüzlerin
 | Ayar | Varsayılan | Açıklama |
 | --- | --- | --- |
 | `USE_MOCK_AUTH` | `true` | `false` olunca giriş ve kayıt gerçek API'ye gider (`/api/auth/...`) |
-| `USE_MOCK_DATA` | `true` | `false` olunca projeler ve sprintler gerçek API'den gelir (`/api/projeler`, `/api/sprintler`) |
+| `USE_MOCK_DATA` | `true` | `false` olunca projeler ve sprintler gerçek API'den gelir (`/api/projeler`, `/api/projeler/{id}/sprintler`, `/api/sprintler/{id}`) |
 | `API_PORT` | `5203` | Web API'nin çalıştığı port |
-
-> **Not:** `USE_MOCK_DATA` ayarı API servis katmanıyla (`hafta3/api-servis`) gelir. O dal birleşene kadar bu ayar yok sayılır; projeler ve sprintler her zaman örnek veriden gelir.
 
 Gerçek API ile çalıştırmak için önce web projesini kendi README'sindeki adımlarla ayağa kaldırın (`dotnet run --launch-profile http`, adres `http://localhost:5203`), sonra:
 
 ```
-flutter run --dart-define=USE_MOCK_AUTH=false --dart-define=USE_MOCK_DATA=false
+flutter run --dart-define=USE_MOCK_AUTH=false
 ```
+
+> **Not:** Web'de şu an yalnızca giriş ve kayıt uçları (`/api/auth/...`) var. Proje ve sprint uçları 4. haftada eklenecek; o zamana kadar `USE_MOCK_DATA=false` ile proje ekranları hata gösterir. Uçlar hazır olunca iki ayar birlikte kapatılır: `flutter run --dart-define=USE_MOCK_AUTH=false --dart-define=USE_MOCK_DATA=false`
 
 - Android emülatöründe bilgisayarın `localhost`'u `10.0.2.2` adresidir; uygulama bunu kendisi seçer.
 - Web API farklı bir portta çalışıyorsa `--dart-define=API_PORT=<port>` ekleyin.
-- Gerçek modda giriş için web'deki hesaplar kullanılır (ör. geliştirme ortamında `test@agilehub.local`).
+- Gerçek modda giriş için web'deki hesaplar kullanılır (ör. geliştirme ortamında `test@agilehub.local`) ya da uygulamadaki "Hesap Oluştur" ekranından yeni hesap açılır.
+- Oturum cihazda saklanır. Sahte ve gerçek mod arasında geçmeden önce uygulamada çıkış yapın; yoksa önceki moddaki oturumla açılır.
 
 ## Test ve kod denetimi
 
