@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agilehub_mobil/models/project.dart';
+import 'package:agilehub_mobil/models/sprint.dart';
 import 'package:agilehub_mobil/models/user.dart';
 
 // Web API'nin gerçekte döndürdüğü gövdelere benzeyen örnekler. Alan adları
@@ -90,6 +91,102 @@ void main() {
       expect(kopya.createdAt, ilk.createdAt);
       expect(kopya.createdByUserId, ilk.createdByUserId);
       expect(kopya.createdByUserName, ilk.createdByUserName);
+    });
+  });
+
+  group('Sprint.fromJson', () {
+    String sprintGovdesi(String durum, {String hedef = 'null'}) =>
+        '''
+        {
+          "id": 4,
+          "projeId": 2,
+          "ad": "Sprint 2",
+          "hedef": $hedef,
+          "baslangicTarihi": "2026-11-09T00:00:00",
+          "bitisTarihi": "2026-11-22T23:59:59",
+          "durum": "$durum",
+          "toplamStoryPoint": 34,
+          "tamamlananStoryPoint": 13
+        }
+        ''';
+
+    test('SprintDto alanlarının hepsini okur', () {
+      final sprint = Sprint.fromJson(
+        _decode(sprintGovdesi('Aktif', hedef: '"Görev panosunu bağla"')),
+      );
+
+      expect(sprint.id, 4);
+      expect(sprint.projectId, 2);
+      expect(sprint.name, 'Sprint 2');
+      expect(sprint.goal, 'Görev panosunu bağla');
+      expect(sprint.startDate, DateTime(2026, 11, 9));
+      expect(sprint.endDate, DateTime(2026, 11, 22, 23, 59, 59));
+      expect(sprint.endDate.isUtc, isFalse);
+      expect(sprint.status, SprintStatus.active);
+      expect(sprint.isActive, isTrue);
+      expect(sprint.totalStoryPoints, 34);
+      expect(sprint.completedStoryPoints, 13);
+    });
+
+    test('hedef boş gelebilir', () {
+      final sprint = Sprint.fromJson(_decode(sprintGovdesi('Planlanıyor')));
+
+      expect(sprint.goal, isNull);
+    });
+
+    test('API\'deki dört SprintDurumu değerini de doğru eşler', () {
+      const beklenen = {
+        'Planlanıyor': SprintStatus.planned,
+        'Aktif': SprintStatus.active,
+        'Tamamlandı': SprintStatus.completed,
+        'İptalEdildi': SprintStatus.cancelled,
+      };
+
+      beklenen.forEach((durum, enumDegeri) {
+        final sprint = Sprint.fromJson(_decode(sprintGovdesi(durum)));
+        expect(sprint.status, enumDegeri, reason: durum);
+        expect(sprint.isActive, enumDegeri == SprintStatus.active);
+      });
+    });
+
+    test('apiValue, API\'nin gönderdiği değerle aynıdır', () {
+      for (final durum in SprintStatus.values) {
+        expect(SprintStatusExtension.fromString(durum.apiValue), durum);
+      }
+      expect(SprintStatus.cancelled.apiValue, 'İptalEdildi');
+      expect(SprintStatus.cancelled.label, 'İptal Edildi');
+    });
+
+    test('story point alanları yoksa 0 kabul edilir', () {
+      final json = _decode(sprintGovdesi('Aktif'))
+        ..remove('toplamStoryPoint')
+        ..remove('tamamlananStoryPoint');
+
+      final sprint = Sprint.fromJson(json);
+
+      expect(sprint.totalStoryPoints, 0);
+      expect(sprint.completedStoryPoints, 0);
+    });
+
+    test('toJson ile geri dönüşümde durum ve tarihler korunur', () {
+      final ilk = Sprint(
+        id: 6,
+        projectId: 2,
+        name: 'Sprint 3',
+        goal: null,
+        startDate: DateTime(2026, 11, 23),
+        endDate: DateTime(2026, 12, 6),
+        status: SprintStatus.cancelled,
+        totalStoryPoints: 0,
+        completedStoryPoints: 0,
+      );
+
+      final kopya = Sprint.fromJson(ilk.toJson());
+
+      expect(kopya.status, SprintStatus.cancelled);
+      expect(kopya.startDate, ilk.startDate);
+      expect(kopya.endDate, ilk.endDate);
+      expect(kopya.goal, isNull);
     });
   });
 
