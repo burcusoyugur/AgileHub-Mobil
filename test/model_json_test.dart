@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agilehub_mobil/models/project.dart';
 import 'package:agilehub_mobil/models/sprint.dart';
+import 'package:agilehub_mobil/models/task.dart';
 import 'package:agilehub_mobil/models/user.dart';
 
 // Web API'nin gerçekte döndürdüğü gövdelere benzeyen örnekler. Alan adları
@@ -187,6 +188,146 @@ void main() {
       expect(kopya.startDate, ilk.startDate);
       expect(kopya.endDate, ilk.endDate);
       expect(kopya.goal, isNull);
+    });
+  });
+
+  group('Task.fromJson', () {
+    Map<String, dynamic> gorevGovdesi({
+      String durum = 'Yapiliyor',
+      String oncelik = 'Yuksek',
+    }) => _decode('''
+        {
+          "id": 15,
+          "projeId": 2,
+          "sprintId": 4,
+          "baslik": "Görev panosunu servise bağla",
+          "aciklama": "Sabit liste yerine TaskService kullanılacak",
+          "durum": "$durum",
+          "oncelik": "$oncelik",
+          "storyPoint": 5,
+          "atananKullaniciId": "k3",
+          "atananKullaniciAdi": "Gözde Sarı",
+          "olusturmaTarihi": "2026-11-10T16:45:00"
+        }
+        ''');
+
+    test('GorevDto alanlarının hepsini okur', () {
+      final gorev = Task.fromJson(gorevGovdesi());
+
+      expect(gorev.id, 15);
+      expect(gorev.projectId, 2);
+      expect(gorev.sprintId, 4);
+      expect(gorev.title, 'Görev panosunu servise bağla');
+      expect(gorev.description, 'Sabit liste yerine TaskService kullanılacak');
+      expect(gorev.status, TaskStatus.inProgress);
+      expect(gorev.priority, TaskPriority.high);
+      expect(gorev.storyPoints, 5);
+      expect(gorev.assignedUserId, 'k3');
+      expect(gorev.assignedUserName, 'Gözde Sarı');
+      expect(gorev.createdAt, DateTime(2026, 11, 10, 16, 45));
+      expect(gorev.createdAt.isUtc, isFalse);
+    });
+
+    test('backlogdaki atanmamış görevin boş alanlarını okur', () {
+      final gorev = Task.fromJson(
+        _decode('''
+        {
+          "id": 21,
+          "projeId": 3,
+          "sprintId": null,
+          "baslik": "Ödünç alma ekranı",
+          "aciklama": null,
+          "durum": "Yapilacak",
+          "oncelik": "Orta",
+          "storyPoint": null,
+          "atananKullaniciId": null,
+          "atananKullaniciAdi": null,
+          "olusturmaTarihi": "2026-11-02T11:00:00"
+        }
+        '''),
+      );
+
+      expect(gorev.sprintId, isNull);
+      expect(gorev.description, isNull);
+      expect(gorev.storyPoints, isNull);
+      expect(gorev.assignedUserId, isNull);
+      expect(gorev.assignedUserName, isNull);
+    });
+
+    test('API\'deki dört GorevDurumu değerini de doğru eşler', () {
+      const beklenen = {
+        'Yapilacak': TaskStatus.todo,
+        'Yapiliyor': TaskStatus.inProgress,
+        'Test': TaskStatus.testing,
+        'Bitti': TaskStatus.done,
+      };
+
+      beklenen.forEach((durum, enumDegeri) {
+        expect(
+          Task.fromJson(gorevGovdesi(durum: durum)).status,
+          enumDegeri,
+          reason: durum,
+        );
+      });
+    });
+
+    test('API\'deki dört GorevOnceligi değerini de doğru eşler', () {
+      const beklenen = {
+        'Dusuk': TaskPriority.low,
+        'Orta': TaskPriority.medium,
+        'Yuksek': TaskPriority.high,
+        'Kritik': TaskPriority.critical,
+      };
+
+      beklenen.forEach((oncelik, enumDegeri) {
+        expect(
+          Task.fromJson(gorevGovdesi(oncelik: oncelik)).priority,
+          enumDegeri,
+          reason: oncelik,
+        );
+      });
+    });
+
+    test('apiValue değerleri fromString ile kendisine döner', () {
+      for (final durum in TaskStatus.values) {
+        expect(TaskStatusExtension.fromString(durum.apiValue), durum);
+      }
+      for (final oncelik in TaskPriority.values) {
+        expect(TaskPriorityExtension.fromString(oncelik.apiValue), oncelik);
+      }
+    });
+
+    test('sprintteki görevler listesini (GorevDto[]) okur', () {
+      final liste = jsonDecode('''
+        [
+          {"id": 1, "projeId": 1, "sprintId": 3, "baslik": "Giriş ekranı", "aciklama": null,
+           "durum": "Bitti", "oncelik": "Kritik", "storyPoint": 8,
+           "atananKullaniciId": "k1", "atananKullaniciAdi": "Erkim Berk Ünsal",
+           "olusturmaTarihi": "2026-10-20T10:00:00"},
+          {"id": 2, "projeId": 1, "sprintId": 3, "baslik": "Sprint listesi", "aciklama": null,
+           "durum": "Test", "oncelik": "Dusuk", "storyPoint": 3,
+           "atananKullaniciId": null, "atananKullaniciAdi": null,
+           "olusturmaTarihi": "2026-10-21T10:00:00"}
+        ]
+        ''') as List<dynamic>;
+
+      final gorevler = liste
+          .map((e) => Task.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      expect(gorevler.map((g) => g.status), [
+        TaskStatus.done,
+        TaskStatus.testing,
+      ]);
+      expect(gorevler.every((g) => g.sprintId == 3), isTrue);
+    });
+
+    test('toJson ile geri dönüşümde alanlar korunur', () {
+      final ilk = Task.fromJson(gorevGovdesi(durum: 'Test', oncelik: 'Kritik'));
+
+      final kopya = Task.fromJson(ilk.toJson());
+
+      expect(kopya.toJson(), ilk.toJson());
     });
   });
 
