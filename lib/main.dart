@@ -8,10 +8,13 @@ import 'services/api_client.dart';
 import 'services/api_config.dart';
 import 'services/api_project_service.dart';
 import 'services/api_sprint_service.dart';
+import 'services/api_task_service.dart';
 import 'services/mock_project_service.dart';
 import 'services/mock_sprint_service.dart';
+import 'services/mock_task_service.dart';
 import 'services/project_service.dart';
 import 'services/sprint_service.dart';
+import 'services/task_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -66,6 +69,11 @@ class _AgileHubAppState extends State<AgileHubApp> {
           create: (_) => ApiConfig.useMockData
               ? const MockSprintService()
               : ApiSprintService(_apiClient),
+        ),
+        Provider<TaskService>(
+          create: (_) => ApiConfig.useMockData
+              ? const MockTaskService()
+              : ApiTaskService(_apiClient),
         ),
       ],
       child: MaterialApp.router(
