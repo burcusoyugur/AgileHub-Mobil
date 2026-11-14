@@ -78,4 +78,53 @@ void main() {
     );
     expect(open.length, greaterThanOrEqualTo(5));
   });
+
+  group('tarihler bugüne göre', () {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    test('aktif sprintler bugün devam ediyor', () {
+      final active = SampleData.sprints.where((s) => s.isActive);
+      expect(active, hasLength(2));
+      for (final sprint in active) {
+        expect(sprint.startDate.isAfter(today), isFalse, reason: sprint.name);
+        expect(sprint.endDate.isBefore(today), isFalse, reason: sprint.name);
+      }
+    });
+
+    test('tamamlanan ve iptal edilen sprintler geçmişte', () {
+      final past = SampleData.sprints.where(
+        (s) =>
+            s.status == SprintStatus.completed ||
+            s.status == SprintStatus.cancelled,
+      );
+      for (final sprint in past) {
+        expect(sprint.endDate.isBefore(today), isTrue, reason: sprint.name);
+      }
+    });
+
+    test('planlanan sprint gelecekte', () {
+      final planned = SampleData.sprints.where(
+        (s) => s.status == SprintStatus.planned,
+      );
+      expect(planned, isNotEmpty);
+      for (final sprint in planned) {
+        expect(sprint.startDate.isAfter(today), isTrue, reason: sprint.name);
+      }
+    });
+
+    test('sprint ve görevler projeden sonra oluşturulmuş', () {
+      for (final project in SampleData.projects) {
+        final created = project.createdAt;
+        for (final s in SampleData.sprints.where(
+          (s) => s.projectId == project.id,
+        )) {
+          expect(s.startDate.isBefore(created), isFalse, reason: s.name);
+        }
+        for (final t in tasks.where((t) => t.projectId == project.id)) {
+          expect(t.createdAt.isBefore(created), isFalse, reason: t.title);
+        }
+      }
+    });
+  });
 }

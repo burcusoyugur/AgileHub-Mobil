@@ -2,7 +2,8 @@ import '../models/project.dart';
 import '../models/sprint.dart';
 import '../models/task.dart';
 
-/// Ortak API 4. haftada hazır olana kadar kullanılan örnek veri.
+/// Sahte modda (`USE_MOCK_DATA=true`) kullanılan örnek veri. Web'deki demo
+/// verisiyle aynı projeler, sprintler ve görevler.
 ///
 /// Ekranlar bu sınıfı doğrudan kullanmaz; sahte servisler buradan okur.
 /// Böylece gerçek API'ye geçerken ekranlarda değişiklik gerekmez.
@@ -10,6 +11,14 @@ class SampleData {
   SampleData._();
 
   static const String demoUserId = 'demo-kullanici';
+
+  /// Bugünden [days] gün önce ya da sonra (saatsiz). Web'deki demo verisi gibi
+  /// tarihler bugüne göre hesaplanır: aktif sprintler her gün devam ediyor
+  /// görünür, "x gün kaldı" anlamlı olur.
+  static DateTime _day(int days) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day + days);
+  }
 
   // Görevlerin atandığı kişiler. Web'deki demo kullanıcılarıyla aynı adlar.
   static const _demo = (id: demoUserId, name: 'Demo Kullanıcı');
@@ -25,7 +34,7 @@ class SampleData {
       id: 1,
       name: 'AgileHub Mobil',
       description: 'Çevik proje takip uygulamasının Flutter istemcisi',
-      createdAt: DateTime(2026, 10, 20),
+      createdAt: _day(-35),
       createdByUserId: demoUserId,
       createdByUserName: 'Demo Kullanıcı',
     ),
@@ -33,7 +42,7 @@ class SampleData {
       id: 2,
       name: 'AgileHub Web',
       description: 'ASP.NET Core ile proje yönetim portalı ve ortak Web API',
-      createdAt: DateTime(2026, 10, 18),
+      createdAt: _day(-37),
       createdByUserId: demoUserId,
       createdByUserName: 'Demo Kullanıcı',
     ),
@@ -42,7 +51,7 @@ class SampleData {
       id: 3,
       name: 'Kütüphane Otomasyonu',
       description: 'Ödünç alma ve iade takibi için örnek proje',
-      createdAt: DateTime(2026, 11, 3),
+      createdAt: _day(-12),
       createdByUserId: demoUserId,
       createdByUserName: 'Demo Kullanıcı',
     ),
@@ -55,8 +64,8 @@ class SampleData {
       projectId: 1,
       name: 'Sprint 1',
       goal: 'Proje iskeleti, tema ve yönlendirme',
-      startDate: DateTime(2026, 10, 21),
-      endDate: DateTime(2026, 10, 25),
+      startDate: _day(-33),
+      endDate: _day(-20),
       status: SprintStatus.completed,
       totalStoryPoints: 13,
       completedStoryPoints: 13,
@@ -66,8 +75,8 @@ class SampleData {
       projectId: 1,
       name: 'Sprint 2',
       goal: 'Giriş, kayıt ve oturum yönetimi',
-      startDate: DateTime(2026, 10, 26),
-      endDate: DateTime(2026, 11, 1),
+      startDate: _day(-19),
+      endDate: _day(-6),
       status: SprintStatus.completed,
       totalStoryPoints: 18,
       completedStoryPoints: 18,
@@ -77,8 +86,8 @@ class SampleData {
       projectId: 1,
       name: 'Sprint 3',
       goal: 'Proje ekranları ve servis katmanı',
-      startDate: DateTime(2026, 11, 2),
-      endDate: DateTime(2026, 11, 8),
+      startDate: _day(-5),
+      endDate: _day(9),
       status: SprintStatus.active,
       totalStoryPoints: 21,
       completedStoryPoints: 8,
@@ -88,8 +97,8 @@ class SampleData {
       projectId: 1,
       name: 'Sprint 4',
       goal: 'Ekranların gerçek API\'ye bağlanması',
-      startDate: DateTime(2026, 11, 16),
-      endDate: DateTime(2026, 11, 22),
+      startDate: _day(10),
+      endDate: _day(23),
       status: SprintStatus.planned,
       totalStoryPoints: 13,
       completedStoryPoints: 0,
@@ -99,8 +108,8 @@ class SampleData {
       projectId: 2,
       name: 'Sprint 1',
       goal: 'Veritabanı, kimlik doğrulama ve projeler',
-      startDate: DateTime(2026, 10, 21),
-      endDate: DateTime(2026, 11, 1),
+      startDate: _day(-33),
+      endDate: _day(-20),
       status: SprintStatus.completed,
       totalStoryPoints: 20,
       completedStoryPoints: 20,
@@ -110,8 +119,8 @@ class SampleData {
       projectId: 2,
       name: 'Sprint 2',
       goal: 'Backlog ve sprintler',
-      startDate: DateTime(2026, 11, 2),
-      endDate: DateTime(2026, 11, 8),
+      startDate: _day(-5),
+      endDate: _day(9),
       status: SprintStatus.active,
       totalStoryPoints: 26,
       completedStoryPoints: 11,
@@ -120,8 +129,8 @@ class SampleData {
       id: 7,
       projectId: 2,
       name: 'Raporlama denemesi',
-      startDate: DateTime(2026, 10, 28),
-      endDate: DateTime(2026, 10, 31),
+      startDate: _day(-19),
+      endDate: _day(-15),
       status: SprintStatus.cancelled,
       totalStoryPoints: 5,
       completedStoryPoints: 0,
@@ -142,7 +151,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _gozde,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     _task(
       id: 2,
@@ -153,7 +162,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 3,
       assignee: _burcu,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     _task(
       id: 3,
@@ -164,7 +173,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _esra,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     // AgileHub Mobil – Sprint 2 (tamamlandı, 18 SP)
     _task(
@@ -176,7 +185,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _esra,
-      createdAt: DateTime(2026, 10, 26),
+      createdAt: _day(-19),
     ),
     _task(
       id: 5,
@@ -187,7 +196,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 5,
       assignee: _gozde,
-      createdAt: DateTime(2026, 10, 26),
+      createdAt: _day(-19),
     ),
     _task(
       id: 6,
@@ -198,7 +207,7 @@ class SampleData {
       priority: TaskPriority.critical,
       storyPoints: 8,
       assignee: _burcu,
-      createdAt: DateTime(2026, 10, 26),
+      createdAt: _day(-19),
     ),
     // AgileHub Mobil – Sprint 3 (aktif, 8 / 21 SP)
     _task(
@@ -210,7 +219,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 5,
       assignee: _esra,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 8,
@@ -221,7 +230,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 3,
       assignee: _erkim,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 9,
@@ -232,7 +241,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 5,
       assignee: _gozde,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 10,
@@ -243,7 +252,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 11,
@@ -254,7 +263,7 @@ class SampleData {
       priority: TaskPriority.critical,
       storyPoints: 3,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     // AgileHub Mobil – Sprint 4 (planlanıyor, 13 SP)
     _task(
@@ -266,7 +275,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _gozde,
-      createdAt: DateTime(2026, 11, 6),
+      createdAt: _day(-3),
     ),
     _task(
       id: 13,
@@ -277,7 +286,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 5,
       assignee: _burcu,
-      createdAt: DateTime(2026, 11, 6),
+      createdAt: _day(-3),
     ),
     _task(
       id: 14,
@@ -288,7 +297,7 @@ class SampleData {
       priority: TaskPriority.low,
       storyPoints: 3,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 6),
+      createdAt: _day(-3),
     ),
     // AgileHub Mobil – backlog
     _task(
@@ -300,7 +309,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 8,
       assignee: null,
-      createdAt: DateTime(2026, 11, 4),
+      createdAt: _day(-10),
     ),
     _task(
       id: 16,
@@ -311,7 +320,7 @@ class SampleData {
       priority: TaskPriority.low,
       storyPoints: 5,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 4),
+      createdAt: _day(-10),
     ),
     // AgileHub Web – Sprint 1 (tamamlandı, 20 SP)
     _task(
@@ -323,7 +332,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 8,
       assignee: _erkim,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     _task(
       id: 18,
@@ -334,7 +343,7 @@ class SampleData {
       priority: TaskPriority.critical,
       storyPoints: 8,
       assignee: _burcu,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     _task(
       id: 19,
@@ -345,7 +354,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 4,
       assignee: _esra,
-      createdAt: DateTime(2026, 10, 21),
+      createdAt: _day(-33),
     ),
     // AgileHub Web – Sprint 2 (aktif, 11 / 26 SP)
     _task(
@@ -357,7 +366,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 8,
       assignee: _gozde,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 21,
@@ -368,7 +377,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 3,
       assignee: _erkim,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 22,
@@ -379,7 +388,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 23,
@@ -390,7 +399,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 5,
       assignee: _esra,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     _task(
       id: 24,
@@ -401,7 +410,7 @@ class SampleData {
       priority: TaskPriority.critical,
       storyPoints: 5,
       assignee: _erkim,
-      createdAt: DateTime(2026, 11, 2),
+      createdAt: _day(-5),
     ),
     // AgileHub Web – "Raporlama denemesi" (iptal edildi, 5 SP)
     _task(
@@ -413,7 +422,7 @@ class SampleData {
       priority: TaskPriority.low,
       storyPoints: 5,
       assignee: null,
-      createdAt: DateTime(2026, 10, 28),
+      createdAt: _day(-19),
     ),
     // AgileHub Web – backlog
     _task(
@@ -425,7 +434,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 3,
       assignee: _burcu,
-      createdAt: DateTime(2026, 11, 3),
+      createdAt: _day(-8),
     ),
     _task(
       id: 27,
@@ -436,7 +445,7 @@ class SampleData {
       priority: TaskPriority.low,
       storyPoints: 5,
       assignee: null,
-      createdAt: DateTime(2026, 11, 3),
+      createdAt: _day(-8),
     ),
     // Kütüphane Otomasyonu – yalnızca backlog (sprint yok)
     _task(
@@ -448,7 +457,7 @@ class SampleData {
       priority: TaskPriority.high,
       storyPoints: 5,
       assignee: _demo,
-      createdAt: DateTime(2026, 11, 3),
+      createdAt: _day(-11),
     ),
     _task(
       id: 29,
@@ -459,7 +468,7 @@ class SampleData {
       priority: TaskPriority.medium,
       storyPoints: 3,
       assignee: null,
-      createdAt: DateTime(2026, 11, 3),
+      createdAt: _day(-11),
     ),
   ];
 

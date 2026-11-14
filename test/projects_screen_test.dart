@@ -12,6 +12,7 @@ import 'package:agilehub_mobil/services/api_exception.dart';
 import 'package:agilehub_mobil/services/auth_service.dart';
 import 'package:agilehub_mobil/services/mock_project_service.dart';
 import 'package:agilehub_mobil/services/project_service.dart';
+import 'package:agilehub_mobil/utils/formatters.dart';
 
 /// Hiç projesi olmayan kullanıcı.
 class _EmptyProjectService implements ProjectService {
@@ -103,6 +104,12 @@ Future<void> _pumpProjects(
   await tester.pumpAndSettle();
 }
 
+/// Örnek veride tarihler bugüne göre hesaplandığı için beklenen tarih de
+/// örnek veriden alınır.
+String _createdAtText(String projectName) => formatDate(
+  SampleData.projects.firstWhere((p) => p.name == projectName).createdAt,
+);
+
 void main() {
   testWidgets('üç projeyi en yeni oluşturulan önce listeler', (tester) async {
     await _pumpProjects(tester);
@@ -128,7 +135,7 @@ void main() {
     await _pumpProjects(tester);
 
     expect(find.text('Demo Kullanıcı'), findsNWidgets(3));
-    expect(find.text('03.11.2026'), findsOneWidget);
+    expect(find.text(_createdAtText('Kütüphane Otomasyonu')), findsOneWidget);
   });
 
   testWidgets('projeye dokununca detay sayfasına gider', (tester) async {
@@ -313,7 +320,7 @@ void main() {
     await _pumpProjects(tester, service: service);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('03.11.2026'), findsWidgets);
+    expect(find.text(_createdAtText('Kütüphane Otomasyonu')), findsWidgets);
 
     // Arama ve boş arama durumu da sığmalı.
     await tester.enterText(find.byType(TextField), 'xyz');
