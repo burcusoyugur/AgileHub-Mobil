@@ -127,7 +127,7 @@ void main() {
   testWidgets('kartta oluşturan kişi ve tarih görünür', (tester) async {
     await _pumpProjects(tester);
 
-    expect(find.text('Burcu Soyuğur'), findsOneWidget);
+    expect(find.text('Demo Kullanıcı'), findsNWidgets(3));
     expect(find.text('03.11.2026'), findsOneWidget);
   });
 

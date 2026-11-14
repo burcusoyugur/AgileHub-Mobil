@@ -18,6 +18,8 @@ class SampleData {
   static const _esra = (id: 'esra', name: 'Esra Meriç Topaktaş');
   static const _erkim = (id: 'erkim', name: 'Erkim Berk Ünsal');
 
+  /// Web'deki demo verisinde olduğu gibi projeleri yönetici oluşturur; sahte
+  /// modda yönetici, giriş yapan demo kullanıcısıdır.
   static final List<Project> projects = [
     Project(
       id: 1,
@@ -32,8 +34,8 @@ class SampleData {
       name: 'AgileHub Web',
       description: 'ASP.NET Core ile proje yönetim portalı ve ortak Web API',
       createdAt: DateTime(2026, 10, 18),
-      createdByUserId: 'burcu',
-      createdByUserName: 'Burcu Soyuğur',
+      createdByUserId: demoUserId,
+      createdByUserName: 'Demo Kullanıcı',
     ),
     // Sprinti olmayan proje: boş durum ekranlarını denemek için.
     Project(
