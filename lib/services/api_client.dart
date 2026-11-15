@@ -97,6 +97,11 @@ class ApiClient {
     }
 
     switch (code) {
+      case 400:
+        throw ApiException(
+          problemMessage(response.bodyBytes) ?? 'Gönderilen bilgiler geçersiz',
+          statusCode: 400,
+        );
       case 401:
         _onUnauthorized?.call();
         throw const ApiException(
@@ -107,8 +112,16 @@ class ApiClient {
         throw const ApiException('Bu kayda erişim yetkin yok', statusCode: 403);
       case 404:
         throw const ApiException('Kayıt bulunamadı', statusCode: 404);
-      default:
-        throw ApiException('Beklenmeyen bir hata oluştu', statusCode: code);
+      case 409:
+        throw const ApiException('Bu kayıt zaten var', statusCode: 409);
     }
+
+    if (code >= 500) {
+      throw ApiException(
+        'Sunucuda bir hata oluştu, lütfen tekrar dene',
+        statusCode: code,
+      );
+    }
+    throw ApiException('Beklenmeyen bir hata oluştu', statusCode: code);
   }
 }

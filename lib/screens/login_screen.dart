@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // İstek sürerken klavyedeki "Bitti" tuşu da ikinci bir istek göndermesin.
+    if (_loading) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
@@ -41,11 +43,19 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
     } on AuthException catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      _showError(e.message);
+    } catch (_) {
+      // Beklenmeyen bir hatada düğme "yükleniyor"da takılı kalmasın.
+      _showError(AuthService.unexpectedError);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

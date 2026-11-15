@@ -31,6 +31,9 @@ class _AgileHubAppState extends State<AgileHubApp> {
   late final GoRouter _router;
   late final ApiClient _apiClient;
 
+  // Oturum düşünce hangi ekranda olunursa olsun bildirim gösterebilmek için.
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
   @override
   void initState() {
     super.initState();
@@ -38,8 +41,23 @@ class _AgileHubAppState extends State<AgileHubApp> {
     _router = createRouter(_auth);
     _apiClient = ApiClient(
       tokenProvider: () => _auth.token,
-      onUnauthorized: _auth.logout,
+      onUnauthorized: _onSessionExpired,
     );
+  }
+
+  /// API 401 döndürdüğünde (token'ın süresi dolmuş ya da geçersiz) çağrılır.
+  /// Çıkış yapılır, router giriş ekranına yönlendirir ve bildirim gösterilir.
+  void _onSessionExpired() {
+    // Ekrandaki birkaç istek aynı anda 401 alabilir; bildirim bir kez gösterilir.
+    if (!_auth.isLoggedIn) return;
+    _auth.logout();
+    _messengerKey.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Oturumun süresi doldu, lütfen tekrar giriş yap'),
+        ),
+      );
   }
 
   @override
@@ -74,6 +92,7 @@ class _AgileHubAppState extends State<AgileHubApp> {
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
         routerConfig: _router,
+        scaffoldMessengerKey: _messengerKey,
         debugShowCheckedModeBanner: false,
       ),
     );

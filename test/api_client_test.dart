@@ -29,7 +29,8 @@ http.Response _json(Object body, int status) => http.Response.bytes(
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
 
-Matcher _apiException(String message, int? statusCode) => isA<ApiException>()
+TypeMatcher<ApiException> _apiException(String message, int? statusCode) =>
+    isA<ApiException>()
     .having((e) => e.message, 'message', message)
     .having((e) => e.statusCode, 'statusCode', statusCode);
 
@@ -125,12 +126,104 @@ void main() {
       );
     });
 
+    test('400: sunucunun "detail" mesajını gösterir', () async {
+      final client = _client(
+        (_) async => _json({
+          'title': 'Geçersiz istek',
+          'status': 400,
+          'detail': 'Sprint bitmiş, görev eklenemez.',
+        }, 400),
+      );
+
+      await expectLater(
+        client.post('/api/projeler/1/gorevler', {}),
+        throwsA(
+          _apiException('Sprint bitmiş, görev eklenemez.', 400)
+              .having((e) => e.isValidation, 'isValidation', true),
+        ),
+      );
+    });
+
+    test('400: detail yoksa "errors" içindeki ilk mesajı gösterir', () async {
+      final client = _client(
+        (_) async => _json({
+          'title': 'One or more validation errors occurred.',
+          'status': 400,
+          'errors': {
+            'Baslik': ['Başlık zorunludur.'],
+          },
+        }, 400),
+      );
+
+      await expectLater(
+        client.post('/api/projeler/1/gorevler', {}),
+        throwsA(_apiException('Başlık zorunludur.', 400)),
+      );
+    });
+
+    test('400: mesaj yoksa varsayılan mesajı gösterir', () async {
+      final client = _client((_) async => _json({'status': 400}, 400));
+
+      await expectLater(
+        client.post('/api/projeler/1/gorevler', {}),
+        throwsA(_apiException('Gönderilen bilgiler geçersiz', 400)),
+      );
+    });
+
+    test('400: gövde JSON değilse çökmez, varsayılan mesajı gösterir',
+        () async {
+      final client = _client(
+        (_) async => http.Response('<html>Bad Request</html>', 400),
+      );
+
+      await expectLater(
+        client.post('/api/projeler/1/gorevler', {}),
+        throwsA(_apiException('Gönderilen bilgiler geçersiz', 400)),
+      );
+    });
+
+    test('409 "Bu kayıt zaten var" hatasına çevrilir', () async {
+      final client = _client((_) async => _json({'status': 409}, 409));
+
+      await expectLater(
+        client.post('/api/projeler/1/gorevler', {}),
+        throwsA(
+          _apiException('Bu kayıt zaten var', 409)
+              .having((e) => e.isConflict, 'isConflict', true),
+        ),
+      );
+    });
+
+    test('500 ve üstü sunucu hatasına çevrilir (gövde boş da olsa)', () async {
+      for (final code in [500, 502, 503]) {
+        final client = _client((_) async => http.Response('', code));
+
+        await expectLater(
+          client.get('/api/projeler'),
+          throwsA(
+            _apiException('Sunucuda bir hata oluştu, lütfen tekrar dene', code)
+                .having((e) => e.isServerError, 'isServerError', true),
+          ),
+        );
+      }
+    });
+
     test('diğer hata kodları beklenmeyen hataya çevrilir', () async {
-      final client = _client((_) async => http.Response('', 500));
+      final client = _client((_) async => http.Response('', 418));
 
       await expectLater(
         client.get('/api/projeler'),
-        throwsA(_apiException('Beklenmeyen bir hata oluştu', 500)),
+        throwsA(_apiException('Beklenmeyen bir hata oluştu', 418)),
+      );
+    });
+
+    test('200 cevabı JSON değilse çökmez, beklenmeyen hataya çevrilir',
+        () async {
+      final client = _client((_) async => http.Response('merhaba', 200));
+
+      await expectLater(
+        client.get('/api/projeler'),
+        throwsA(_apiException('Beklenmeyen bir hata oluştu', 200)),
       );
     });
 
@@ -141,8 +234,33 @@ void main() {
 
       await expectLater(
         client.get('/api/projeler'),
-        throwsA(_apiException('Sunucuya ulaşılamadı', null)),
+        throwsA(
+          _apiException('Sunucuya ulaşılamadı', null)
+              .having((e) => e.isConnectionError, 'isConnectionError', true),
+        ),
       );
+    });
+  });
+
+  group('problemMessage', () {
+    List<int> bytes(Object body) => utf8.encode(jsonEncode(body));
+
+    test('önce detail, sonra errors içindeki ilk mesaj', () {
+      expect(
+        problemMessage(bytes({'detail': 'A', 'errors': {'x': ['B']}})),
+        'A',
+      );
+      expect(problemMessage(bytes({'errors': {'x': ['B', 'C']}})), 'B');
+    });
+
+    test('İngilizce title kullanılmaz', () {
+      expect(problemMessage(bytes({'title': 'Bad Request'})), isNull);
+    });
+
+    test('boş, JSON olmayan veya liste gövdede null döner', () {
+      expect(problemMessage([]), isNull);
+      expect(problemMessage(utf8.encode('<html>')), isNull);
+      expect(problemMessage(bytes(['detail'])), isNull);
     });
   });
 }

@@ -34,6 +34,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    // İstek sürerken klavyedeki "Bitti" tuşu da ikinci bir kayıt göndermesin.
+    if (_loading) return;
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
@@ -53,11 +55,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
     } on AuthException catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      _showError(e.message);
+    } catch (_) {
+      // Beklenmeyen bir hatada düğme "yükleniyor"da takılı kalmasın.
+      _showError(AuthService.unexpectedError);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
