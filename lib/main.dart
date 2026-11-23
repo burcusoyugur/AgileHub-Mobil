@@ -98,7 +98,8 @@ class _AgileHubAppState extends State<AgileHubApp> {
         title: 'AgileHub Mobil',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
+        // Web'le aynı görünüm için uygulama her zaman koyu temada açılır.
+        themeMode: ThemeMode.dark,
         routerConfig: _router,
         scaffoldMessengerKey: _messengerKey,
         debugShowCheckedModeBanner: false,
