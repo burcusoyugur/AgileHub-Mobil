@@ -60,4 +60,17 @@ void main() {
       );
     });
   });
+
+  group('sortSprintsForPicker', () {
+    test('aktif, planlanan, tamamlanan, iptal sırasıyla dizer', () {
+      final ids = sortSprintsForPicker(_karisik).map((s) => s.id).toList();
+      expect(ids, [3, 4, 5, 2, 1, 6]);
+    });
+
+    test('gelen listeyi değiştirmez', () {
+      final once = _karisik.map((s) => s.id).toList();
+      sortSprintsForPicker(_karisik);
+      expect(_karisik.map((s) => s.id).toList(), once);
+    });
+  });
 }
