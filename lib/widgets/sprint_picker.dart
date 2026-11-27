@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
+
 import '../models/sprint.dart';
+import '../utils/formatters.dart';
+import 'sprint_status_chip.dart';
 
 /// Pano açılırken hangi sprintin seçileceğini belirler:
 /// aktif sprint varsa o, yoksa başlangıcı en yakın planlanan sprint,
@@ -59,4 +63,146 @@ List<Sprint> sortSprintsForPicker(List<Sprint> sprints) {
     final byEnd = b.endDate.compareTo(a.endDate);
     return byEnd != 0 ? byEnd : b.startDate.compareTo(a.startDate);
   });
+}
+
+/// Görev Panosu'nun app bar'ında başlık gibi duran sprint seçici.
+///
+/// Seçili sprintin adını ve durum rozetini gösterir; dokununca projenin
+/// sprintleri alttan açılan bir listede gelir. Başka bir sprint seçilince
+/// [onChanged] çağrılır, aynı sprint seçilirse ya da liste kapatılırsa
+/// çağrılmaz.
+class SprintPicker extends StatelessWidget {
+  final List<Sprint> sprints;
+  final int? selectedId;
+  final ValueChanged<Sprint> onChanged;
+
+  const SprintPicker({
+    super.key,
+    required this.sprints,
+    required this.selectedId,
+    required this.onChanged,
+  });
+
+  Sprint? get _selected {
+    for (final sprint in sprints) {
+      if (sprint.id == selectedId) return sprint;
+    }
+    return null;
+  }
+
+  Future<void> _openSheet(BuildContext context) async {
+    final picked = await showModalBottomSheet<Sprint>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => _SprintSheet(
+        sprints: sortSprintsForPicker(sprints),
+        selectedId: selectedId,
+      ),
+    );
+    if (picked != null && picked.id != selectedId) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final selected = _selected;
+    final enabled = sprints.isNotEmpty;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: selected == null
+          ? 'Sprint seç'
+          : 'Seçili sprint: ${selected.name}, ${selected.status.label}. '
+                'Değiştirmek için dokun',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: enabled ? () => _openSheet(context) : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  selected?.name ?? (enabled ? 'Sprint seç' : 'Sprint yok'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      theme.appBarTheme.titleTextStyle ??
+                      theme.textTheme.titleLarge,
+                ),
+              ),
+              if (selected != null) ...[
+                const SizedBox(width: 8),
+                SprintStatusChip(status: selected.status),
+              ],
+              if (enabled) const Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Alttan açılan sprint listesi; seçilen sprintle kapanır.
+class _SprintSheet extends StatelessWidget {
+  final List<Sprint> sprints;
+  final int? selectedId;
+
+  const _SprintSheet({required this.sprints, required this.selectedId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text('Sprint seç', style: theme.textTheme.titleMedium),
+          ),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: sprints.length,
+              itemBuilder: (context, index) {
+                final sprint = sprints[index];
+                final isSelected = sprint.id == selectedId;
+                final cancelled = sprint.status == SprintStatus.cancelled;
+
+                return Opacity(
+                  // İptal edilen sprintler seçilebilir ama soluk görünür.
+                  opacity: cancelled ? 0.5 : 1,
+                  child: ListTile(
+                    selected: isSelected,
+                    leading: Icon(
+                      isSelected ? Icons.check_circle : Icons.circle_outlined,
+                      color: isSelected ? colors.primary : colors.outline,
+                    ),
+                    title: Text(
+                      sprint.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      formatDateRange(sprint.startDate, sprint.endDate),
+                    ),
+                    trailing: SprintStatusChip(status: sprint.status),
+                    onTap: () => Navigator.of(context).pop(sprint),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
