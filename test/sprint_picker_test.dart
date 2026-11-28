@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agilehub_mobil/models/sprint.dart';
 import 'package:agilehub_mobil/widgets/sprint_picker.dart';
+import 'package:agilehub_mobil/widgets/sprint_status_chip.dart';
 
 Sprint _sprint(int id, SprintStatus durum, DateTime baslangic, {String? ad}) =>
     Sprint(
@@ -24,6 +26,14 @@ final _karisik = [
   _sprint(4, SprintStatus.planned, DateTime(2026, 12, 7)),
   _sprint(3, SprintStatus.active, DateTime(2026, 11, 23)),
 ];
+
+/// Alttan açılan liste ekran yüksekliğiyle sınırlı; testte tüm satırlar
+/// oluşturulsun diye görünümü uzatır.
+void _tumListeSigsin(WidgetTester tester) {
+  tester.view.physicalSize = const Size(400, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
 
 void main() {
   group('defaultSprintId', () {
@@ -71,6 +81,131 @@ void main() {
       final once = _karisik.map((s) => s.id).toList();
       sortSprintsForPicker(_karisik);
       expect(_karisik.map((s) => s.id).toList(), once);
+    });
+  });
+
+  group('SprintPicker', () {
+    Future<List<Sprint>> pumpPicker(
+      WidgetTester tester, {
+      List<Sprint>? sprints,
+      int? selectedId = 3,
+    }) async {
+      final secilenler = <Sprint>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(
+              title: SprintPicker(
+                sprints: sprints ?? _karisik,
+                selectedId: selectedId,
+                onChanged: secilenler.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      return secilenler;
+    }
+
+    testWidgets('seçili sprintin adını ve durumunu gösterir', (tester) async {
+      await pumpPicker(tester);
+
+      expect(find.text('Sprint 3'), findsOneWidget);
+      expect(find.text('Aktif'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
+    });
+
+    testWidgets('dokununca tüm sprintler sıralı listelenir', (tester) async {
+      _tumListeSigsin(tester);
+      await pumpPicker(tester);
+
+      await tester.tap(find.byType(SprintPicker));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sprint seç'), findsOneWidget);
+      final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+      expect(tiles.map((t) => (t.title as Text).data), [
+        'Sprint 3',
+        'Sprint 4',
+        'Sprint 5',
+        'Sprint 2',
+        'Sprint 1',
+        'Sprint 6',
+      ]);
+      // Yalnızca seçili sprint işaretli.
+      expect(tiles.where((t) => t.selected).length, 1);
+      expect(tiles.first.selected, isTrue);
+      expect(find.text('23.11.2026 – 06.12.2026'), findsOneWidget);
+    });
+
+    testWidgets('iptal edilen sprint soluk görünür', (tester) async {
+      _tumListeSigsin(tester);
+      await pumpPicker(tester);
+
+      await tester.tap(find.byType(SprintPicker));
+      await tester.pumpAndSettle();
+
+      final opacity = tester.widget<Opacity>(
+        find.ancestor(
+          of: find.widgetWithText(ListTile, 'Sprint 6'),
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(opacity.opacity, lessThan(1));
+    });
+
+    testWidgets('başka sprint seçilince onChanged çağrılır', (tester) async {
+      final secilenler = await pumpPicker(tester);
+
+      await tester.tap(find.byType(SprintPicker));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Sprint 2'));
+      await tester.pumpAndSettle();
+
+      expect(secilenler.map((s) => s.id), [2]);
+      expect(find.byType(BottomSheet), findsNothing);
+    });
+
+    testWidgets('aynı sprint seçilince onChanged çağrılmaz', (tester) async {
+      final secilenler = await pumpPicker(tester);
+
+      await tester.tap(find.byType(SprintPicker));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Sprint 3'));
+      await tester.pumpAndSettle();
+
+      expect(secilenler, isEmpty);
+    });
+
+    testWidgets('sprint yoksa "Sprint yok" yazar ve açılmaz', (tester) async {
+      await pumpPicker(tester, sprints: const [], selectedId: null);
+
+      expect(find.text('Sprint yok'), findsOneWidget);
+      expect(find.byType(SprintStatusChip), findsNothing);
+
+      await tester.tap(find.byType(SprintPicker));
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+    });
+
+    testWidgets('360 px genişlikte uzun adla taşmaz', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await pumpPicker(
+        tester,
+        sprints: [
+          _sprint(
+            3,
+            SprintStatus.active,
+            DateTime(2026, 11, 23),
+            ad: 'Kanban panosu ve görev durumlarının güncellenmesi sprinti',
+          ),
+        ],
+      );
+
+      expect(tester.takeException(), isNull);
     });
   });
 }
