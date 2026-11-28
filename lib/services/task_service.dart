@@ -13,4 +13,10 @@ abstract class TaskService {
   /// Görev yoksa ya da kullanıcı projenin üyesi değilse `ApiException`
   /// fırlatır.
   Future<Task> getTask(int id);
+
+  /// Görevin durumunu değiştirir ve güncel görevi döndürür.
+  ///
+  /// Görev yoksa (404), kullanıcı üye değilse (403) ya da durum geçersizse
+  /// (400) `ApiException` fırlatır.
+  Future<Task> updateStatus(int taskId, TaskStatus status);
 }

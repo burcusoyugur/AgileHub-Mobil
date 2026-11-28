@@ -92,6 +92,25 @@ void main() {
       expect(gelen.headers['Content-Type'], startsWith('application/json'));
     });
 
+    test('PATCH gövdesini JSON olarak gönderir ve cevabı çözer', () async {
+      late http.Request gelen;
+      final client = _client((request) async {
+        gelen = request;
+        return _json({'id': 7, 'durum': 'Test'}, 200);
+      });
+
+      final sonuc = await client.patch('/api/gorevler/7/durum', {
+        'durum': 'Test',
+      });
+
+      expect(gelen.method, 'PATCH');
+      expect(gelen.url.toString(), '$_baseUrl/api/gorevler/7/durum');
+      expect(jsonDecode(gelen.body), {'durum': 'Test'});
+      expect(gelen.headers['Content-Type'], startsWith('application/json'));
+      expect(gelen.headers['Authorization'], 'Bearer abc123');
+      expect(sonuc, {'id': 7, 'durum': 'Test'});
+    });
+
     test('401 oturum hatasına çevrilir ve onUnauthorized çağrılır', () async {
       var cikisYapildi = false;
       final client = _client(

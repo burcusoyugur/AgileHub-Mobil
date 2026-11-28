@@ -51,6 +51,12 @@ class _FakeTaskService implements TaskService {
     bool backlogOnly = false,
   }) => throw UnimplementedError();
 
+  // Durum güncelleme (hafta5/durum-guncelleme) arayüze eklendi; pano testleri
+  // bunu kullanana kadar yalnızca derlensin diye.
+  @override
+  Future<Task> updateStatus(int taskId, TaskStatus status) =>
+      throw UnimplementedError();
+
   @override
   Future<Task> getTask(int id) => throw UnimplementedError();
 }

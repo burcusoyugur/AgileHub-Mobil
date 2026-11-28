@@ -164,4 +164,88 @@ void main() {
       );
     });
   });
+
+  group('ApiTaskService.updateStatus', () {
+    /// Her isteğe [durumKodu] ve [govde] ile cevap veren, istekleri
+    /// [istekler]e kaydeden sahte sunucu.
+    ApiTaskService servis(
+      int durumKodu, {
+      Object? govde,
+      List<http.Request>? istekler,
+    }) => ApiTaskService(
+      ApiClient(
+        tokenProvider: () => 'token',
+        baseUrl: _baseUrl,
+        httpClient: MockClient((request) async {
+          istekler?.add(request);
+          return http.Response.bytes(
+            govde == null ? const [] : utf8.encode(jsonEncode(govde)),
+            durumKodu,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      ),
+    );
+
+    test('PATCH /api/gorevler/{id}/durum ile enum adını gönderir', () async {
+      final istekler = <http.Request>[];
+
+      final gorev = await servis(
+        200,
+        govde: _gorev(7, durum: 'Test'),
+        istekler: istekler,
+      ).updateStatus(7, TaskStatus.testing);
+
+      final istek = istekler.single;
+      expect(istek.method, 'PATCH');
+      expect(istek.url.path, '/api/gorevler/7/durum');
+      expect(jsonDecode(istek.body), {'durum': 'Test'});
+      expect(gorev.id, 7);
+      expect(gorev.status, TaskStatus.testing);
+    });
+
+    test('her durum API enum adıyla gönderilir', () async {
+      const beklenen = {
+        TaskStatus.todo: 'Yapilacak',
+        TaskStatus.inProgress: 'Yapiliyor',
+        TaskStatus.testing: 'Test',
+        TaskStatus.done: 'Bitti',
+      };
+
+      for (final durum in beklenen.entries) {
+        final istekler = <http.Request>[];
+        await servis(
+          200,
+          govde: _gorev(1, durum: durum.value),
+          istekler: istekler,
+        ).updateStatus(1, durum.key);
+
+        expect(jsonDecode(istekler.single.body), {'durum': durum.value});
+      }
+    });
+
+    test('400: sunucunun Türkçe mesajı gösterilir', () async {
+      await expectLater(
+        servis(
+          400,
+          govde: {'status': 400, 'detail': 'Geçersiz görev durumu.'},
+        ).updateStatus(7, TaskStatus.testing),
+        throwsA(_apiException('Geçersiz görev durumu.', 400)),
+      );
+    });
+
+    test('403: yetki hatası olduğu gibi iletilir', () async {
+      await expectLater(
+        servis(403).updateStatus(7, TaskStatus.testing),
+        throwsA(_apiException('Bu kayda erişim yetkin yok', 403)),
+      );
+    });
+
+    test('404: "Görev bulunamadı" verir', () async {
+      await expectLater(
+        servis(404).updateStatus(999, TaskStatus.testing),
+        throwsA(_apiException('Görev bulunamadı', 404)),
+      );
+    });
+  });
 }

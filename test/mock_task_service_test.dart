@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agilehub_mobil/data/sample_data.dart';
+import 'package:agilehub_mobil/models/task.dart';
 import 'package:agilehub_mobil/services/api_exception.dart';
 import 'package:agilehub_mobil/services/mock_task_service.dart';
 
@@ -67,6 +68,61 @@ void main() {
     test('olmayan görev için "Görev bulunamadı" fırlatır', () async {
       await expectLater(
         service.getTask(999999),
+        throwsA(_apiException('Görev bulunamadı', 404)),
+      );
+    });
+  });
+
+  group('MockTaskService.updateStatus', () {
+    // Değişiklikler sınıf düzeyinde tutulduğu için her testten sonra silinir.
+    tearDown(MockTaskService.resetStatusOverrides);
+
+    test(
+      'güncel görevi döner; sonraki okumalarda yeni durum görünür',
+      () async {
+        final gorev = SampleData.tasks.firstWhere(
+          (t) => t.sprintId == 3 && t.status != TaskStatus.testing,
+        );
+
+        final guncel = await service.updateStatus(gorev.id, TaskStatus.testing);
+
+        expect(guncel.id, gorev.id);
+        expect(guncel.status, TaskStatus.testing);
+
+        final sprint = await service.getSprintTasks(3);
+        expect(
+          sprint.firstWhere((t) => t.id == gorev.id).status,
+          TaskStatus.testing,
+        );
+        expect((await service.getTask(gorev.id)).status, TaskStatus.testing);
+        final proje = await service.getProjectTasks(gorev.projectId);
+        expect(
+          proje.firstWhere((t) => t.id == gorev.id).status,
+          TaskStatus.testing,
+        );
+      },
+    );
+
+    test('örnek veriyi değiştirmez, diğer görevler etkilenmez', () async {
+      final gorevler = SampleData.tasks.where((t) => t.sprintId == 3).toList();
+      final ilk = gorevler[0];
+      final ikinci = gorevler[1];
+      final yeni = ilk.status == TaskStatus.done
+          ? TaskStatus.todo
+          : TaskStatus.done;
+
+      await service.updateStatus(ilk.id, yeni);
+
+      expect(
+        SampleData.tasks.firstWhere((t) => t.id == ilk.id).status,
+        ilk.status,
+      );
+      expect((await service.getTask(ikinci.id)).status, ikinci.status);
+    });
+
+    test('olmayan görev için "Görev bulunamadı" fırlatır', () async {
+      await expectLater(
+        service.updateStatus(999999, TaskStatus.done),
         throwsA(_apiException('Görev bulunamadı', 404)),
       );
     });
