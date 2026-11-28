@@ -33,10 +33,26 @@ String errorMessage(
 void showErrorSnackBar(BuildContext context, Object error, {String? fallback}) {
   if (error is ApiException && error.isUnauthorized) return;
 
+  showErrorSnackBarOn(ScaffoldMessenger.of(context), error, fallback: fallback);
+}
+
+/// [showErrorSnackBar] ile aynı, ama `context` yerine önceden alınmış
+/// [ScaffoldMessengerState] ile çalışır.
+///
+/// `await`'ten sonra hatayı gösteren widget o sırada ekrandan kalkmış
+/// olabilir (ör. panodaki kart başka sekmeye geçti); bu durumda messenger
+/// beklemeden önce alınır ve bu fonksiyona verilir.
+void showErrorSnackBarOn(
+  ScaffoldMessengerState messenger,
+  Object error, {
+  String? fallback,
+}) {
+  if (error is ApiException && error.isUnauthorized) return;
+
   final message = fallback == null
       ? errorMessage(error)
       : errorMessage(error, fallback: fallback);
-  ScaffoldMessenger.of(context)
+  messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
 }
@@ -51,12 +67,7 @@ class ErrorView extends StatelessWidget {
   final VoidCallback? onRetry;
   final Object? error;
 
-  const ErrorView({
-    super.key,
-    required this.message,
-    this.onRetry,
-    this.error,
-  });
+  const ErrorView({super.key, required this.message, this.onRetry, this.error});
 
   /// Mesajı hatadan kendisi çıkarır: `ErrorView.fromError(snapshot.error!, ...)`.
   ErrorView.fromError(
