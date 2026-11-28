@@ -47,6 +47,10 @@ class ApiClient {
   Future<dynamic> put(String path, Object? body) =>
       _send('PUT', path, body: body);
 
+  /// Kaydın yalnızca bir kısmını değiştirir (ör. görevin durumu).
+  Future<dynamic> patch(String path, Object? body) =>
+      _send('PATCH', path, body: body);
+
   Future<dynamic> delete(String path) => _send('DELETE', path);
 
   void close() => _http.close();
