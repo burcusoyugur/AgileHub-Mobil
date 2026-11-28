@@ -7,7 +7,7 @@ import 'task_service.dart';
 ///
 /// Uçlar: `GET /api/sprintler/{id}/gorevler`,
 /// `GET /api/projeler/{projeId}/gorevler?sadeceBacklog=`,
-/// `GET /api/gorevler/{id}`.
+/// `GET /api/gorevler/{id}`, `PATCH /api/gorevler/{id}/durum`.
 class ApiTaskService implements TaskService {
   final ApiClient _client;
 
@@ -56,6 +56,22 @@ class ApiTaskService implements TaskService {
       return Task.fromJson(json as Map<String, dynamic>);
     } on ApiException catch (e) {
       // Sahte servisle aynı metin görünsün diye.
+      if (e.isNotFound) {
+        throw const ApiException('Görev bulunamadı', statusCode: 404);
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Task> updateStatus(int taskId, TaskStatus status) async {
+    try {
+      // Gövde: { "durum": "Yapiliyor" } (API'deki enum adı). Cevap güncel görev.
+      final json = await _client.patch('/api/gorevler/$taskId/durum', {
+        'durum': status.apiValue,
+      });
+      return Task.fromJson(json as Map<String, dynamic>);
+    } on ApiException catch (e) {
       if (e.isNotFound) {
         throw const ApiException('Görev bulunamadı', statusCode: 404);
       }
